@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Retail Pulse Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero panel">
+      <div class="hero__copy">
+        <p class="eyebrow">Retail / Sales Command Center</p>
+        <h1>Upload sales data and understand business performance fast.</h1>
+        <p class="hero__lede">
+          This dashboard is built around a simple CSV input with the columns
+          <strong>Date</strong>, <strong>Product</strong>, <strong>Category</strong>,
+          <strong>Sales</strong>, and <strong>Profit</strong>. It turns raw rows into
+          a clear view of growth, margin quality, category mix, and product contribution.
+        </p>
+        <div class="hero__meta">
+          <span class="badge" id="dataSourceBadge">Built-in sample data</span>
+          <span class="badge badge--soft" id="heroPeriodLabel">Last 6 months</span>
+        </div>
+        <div class="story-card">
+          <p class="story-card__eyebrow">Performance Story</p>
+          <h2 id="storyTitle">Sales and profit are moving in the right direction.</h2>
+          <p id="storyBody">
+            Upload your file to replace the sample dataset and let the dashboard recalculate the full performance picture.
+          </p>
+        </div>
+      </div>
+
+      <aside class="hero__aside">
+        <div class="control-card upload-card">
+          <p class="control-card__label">Data Input</p>
+          <label class="file-drop" for="csvInput">
+            <span class="file-drop__title">Upload CSV</span>
+            <span class="file-drop__meta">Required columns: Date, Product, Category, Sales, Profit</span>
+          </label>
+          <input id="csvInput" class="file-input" type="file" accept=".csv,text/csv">
+          <div class="upload-actions">
+            <a class="inline-link" href="sample-sales-data.csv" download>Download sample CSV</a>
+            <button class="ghost-button" id="resetDataButton" type="button">Use sample data</button>
+          </div>
+          <p class="upload-status" id="uploadStatus">Using built-in sample dataset generated from the required columns.</p>
+        </div>
+
+        <div class="control-card">
+          <p class="control-card__label">Filters</p>
+          <div class="filter-grid">
+            <div class="control-group">
+              <label class="control-card__label" for="startDateFilter">Start Date</label>
+              <input id="startDateFilter" class="region-select" type="date">
+            </div>
+            <div class="control-group">
+              <label class="control-card__label" for="endDateFilter">End Date</label>
+              <input id="endDateFilter" class="region-select" type="date">
+            </div>
+          </div>
+          <div class="control-group">
+            <label class="control-card__label" for="categoryFilter">Category Focus</label>
+            <select id="categoryFilter" class="region-select">
+              <option value="All">All Categories</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label class="control-card__label" for="productFilter">Product Focus</label>
+            <select id="productFilter" class="region-select">
+              <option value="All">All Products</option>
+            </select>
+          </div>
+          <button class="ghost-button ghost-button--accent" id="exportCsvButton" type="button">
+            Download filtered CSV
+          </button>
+          <p class="control-note">
+            Change the date range, category, or product and the full dashboard updates immediately. Export downloads only the rows currently in view.
+          </p>
+        </div>
+
+        <div class="hero-facts">
+          <article class="fact-card">
+            <span>Date Range</span>
+            <strong id="heroDateRange">Jan 2026 - Dec 2026</strong>
+          </article>
+          <article class="fact-card">
+            <span>Top Category</span>
+            <strong id="heroCategory">Electronics</strong>
+          </article>
+          <article class="fact-card">
+            <span>Top Product</span>
+            <strong id="heroProduct">4K TV</strong>
+          </article>
+        </div>
+      </aside>
+    </header>
+
+    <section class="dashboard-section dashboard-section--kpis" aria-labelledby="kpiSectionTitle">
+      <div class="section-heading">
+        <div>
+          <p class="section-heading__eyebrow">KPIs</p>
+          <h2 class="section-heading__title" id="kpiSectionTitle">Core business performance</h2>
+        </div>
+        <p class="section-heading__copy">
+          Start with the four headline cards to see total sales, total profit, average sales, and the category leading the current filtered view.
+        </p>
+      </div>
+
+      <div class="metrics-grid" aria-label="KPI summary">
+        <article class="metric-card">
+          <span class="metric-card__label">Total Sales</span>
+          <strong class="metric-card__value" id="kpiSales">$0</strong>
+          <span class="metric-card__delta" id="kpiSalesDelta">0%</span>
+          <span class="metric-card__foot">Compared with previous window</span>
+        </article>
+
+        <article class="metric-card">
+          <span class="metric-card__label">Total Profit</span>
+          <strong class="metric-card__value" id="kpiProfit">$0</strong>
+          <span class="metric-card__delta" id="kpiProfitDelta">0%</span>
+          <span class="metric-card__foot">Compared with previous window</span>
+        </article>
+
+        <article class="metric-card">
+          <span class="metric-card__label">Average Sales</span>
+          <strong class="metric-card__value" id="kpiAvgSale">$0</strong>
+          <span class="metric-card__delta" id="kpiAvgSaleDelta">0%</span>
+          <span class="metric-card__foot">Average value of each record</span>
+        </article>
+
+        <article class="metric-card">
+          <span class="metric-card__label">Top Category</span>
+          <strong class="metric-card__value" id="kpiTopCategory">No data</strong>
+          <span class="metric-card__delta" id="kpiTopCategoryDelta">0%</span>
+          <span class="metric-card__foot" id="kpiTopCategoryFoot">Highest sales contribution</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="dashboard-section dashboard-section--charts" aria-labelledby="chartsSectionTitle">
+      <div class="section-heading">
+        <div>
+          <p class="section-heading__eyebrow">Charts</p>
+          <h2 class="section-heading__title" id="chartsSectionTitle">Performance trends and mix</h2>
+        </div>
+        <p class="section-heading__copy">
+          The middle section keeps the visual story together so users can compare time trend, category sales, and profit distribution without jumping around the page.
+        </p>
+      </div>
+
+      <div class="dashboard-grid dashboard-grid--charts">
+        <section class="panel panel--full">
+          <div class="panel__header">
+            <div>
+              <p class="panel__eyebrow">Trend</p>
+              <h3 class="panel__title">Sales over time</h3>
+            </div>
+            <p class="panel__copy">
+              Track sales movement across the selected time window and watch how the line changes as filters update.
+            </p>
+          </div>
+          <div class="chart-wrap chart-wrap--large">
+            <canvas id="performanceChart" aria-label="Sales over time line chart"></canvas>
+          </div>
+        </section>
+
+        <section class="panel panel--half">
+          <div class="panel__header">
+            <div>
+              <p class="panel__eyebrow">Categories</p>
+              <h3 class="panel__title" id="mixTitle">Category-wise sales</h3>
+            </div>
+          </div>
+          <div class="chart-wrap chart-wrap--medium">
+            <canvas id="mixChart" aria-label="Category-wise sales bar chart"></canvas>
+          </div>
+          <div class="stack-list" id="mixBreakdown"></div>
+        </section>
+
+        <section class="panel panel--half">
+          <div class="panel__header">
+            <div>
+              <p class="panel__eyebrow">Profit</p>
+              <h3 class="panel__title" id="comparisonTitle">Profit distribution</h3>
+            </div>
+          </div>
+          <div class="chart-wrap chart-wrap--donut">
+            <canvas id="comparisonChart" aria-label="Profit distribution pie chart"></canvas>
+          </div>
+          <div class="stack-list" id="comparisonSummary"></div>
+        </section>
+
+        <section class="panel panel--full">
+          <div class="panel__header">
+            <div>
+              <p class="panel__eyebrow">Products</p>
+              <h3 class="panel__title">Product performance table</h3>
+            </div>
+            <p class="panel__copy">
+              Use this table to identify the products creating the most sales, the strongest margin pool, and the items that may be dragging profitability.
+            </p>
+          </div>
+          <div class="table-wrap">
+            <table class="performance-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Category</th>
+                  <th>Sales</th>
+                  <th>Profit</th>
+                  <th>Margin</th>
+                  <th>Sales Mix</th>
+                </tr>
+              </thead>
+              <tbody id="productTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="dashboard-section dashboard-section--insights" aria-labelledby="insightsSectionTitle">
+      <div class="section-heading">
+        <div>
+          <p class="section-heading__eyebrow">Insights</p>
+          <h2 class="section-heading__title" id="insightsSectionTitle">Automatic business takeaways</h2>
+        </div>
+        <p class="section-heading__copy">
+          The bottom section turns the filtered data into quick signals, recent month snapshots, and watchlist items for leaders to act on.
+        </p>
+      </div>
+
+      <div class="dashboard-grid dashboard-grid--insights">
+        <section class="panel panel--full">
+          <div class="panel__header">
+            <div>
+              <p class="panel__eyebrow">Executive Brief</p>
+              <h3 class="panel__title">What the business is saying</h3>
+            </div>
+          </div>
+          <ul class="signal-list" id="signalList"></ul>
+        </section>
+
+        <section class="panel panel--half">
+          <div class="panel__header">
+            <div>
+              <p class="panel__eyebrow">Monthly View</p>
+              <h3 class="panel__title">Latest month snapshots</h3>
+            </div>
+          </div>
+          <div class="stack-list" id="monthSummary"></div>
+        </section>
+
+        <section class="panel panel--half">
+          <div class="panel__header">
+            <div>
+              <p class="panel__eyebrow">Watchlist</p>
+              <h3 class="panel__title">Where leaders should look next</h3>
+            </div>
+          </div>
+          <ul class="watch-list" id="watchList"></ul>
+        </section>
+      </div>
+    </section>
+  </div>
+</body>
+</html>
